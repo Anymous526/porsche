@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.wallet.porsche.account.mapper.UserMapper">
+	<resultMap type="com.wallet.porsche.account.entity.User" id="baseResult">
+		<result column="id" property="id" jdbcType="VARCHAR"/>
+		<result column="email" property="email" jdbcType="VARCHAR"/>
+		<result column="mobile" property="mobile" jdbcType="VARCHAR"/>
+		<result column="userType" property="userType" jdbcType="VARCHAR"/>
+	</resultMap>
+	
+	<select id="insert" parameterType="com.wallet.porsche.account.entity.User">
+		insert into 
+	</select>
+	
+	<update id="update">
+		
+	</update>
+	
+	<select id="selectById"  parameterType="String">
+		
+	</select>
+	
+	<delete id="delete" parameterType="com.wallet.porsche.account.entity.User">
+		
+	</delete>
+
+</mapper>

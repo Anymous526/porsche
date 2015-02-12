@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/aop     http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+           http://www.springframework.org/schema/beans   http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd
+           http://www.springframework.org/schema/mvc     http://www.springframework.org/schema/mvc/spring-mvc-3.0.xsd
+           http://www.springframework.org/schema/tx      http://www.springframework.org/schema/tx/spring-tx-3.0.xsd">
+	<!-- Annotation Config -->
+	<context:annotation-config />
+	<context:property-placeholder
+		location="classpath:/jeecg/jeecg_database.properties" />
+
+	<!--创建jdbc数据源 -->
+	<bean id="dataSource_alibaba" class="com.alibaba.druid.pool.DruidDataSource"
+		init-method="init" destroy-method="close">
+		<property name="driverClassName" value="${jdbc.driver}" />
+		<property name="url" value="${jdbc.url}" />
+		<property name="username" value="${jdbc.username}" />
+		<property name="password" value="${jdbc.password}" />
+		<property name="initialSize" value="${jdbc.initialSize}" />
+		<property name="maxActive" value="${jdbc.maxActive}" />
+		<property name="minIdle" value="${jdbc.minIdle}" />
+		<property name="validationQuery" value="select * from dual" />
+		<property name="filters" value="stat" />
+		<property name="connectionProperties" value="druid.stat.mergeSql=true" />
+	</bean>
+
+	<!-- 扫描Service -->
+	<context:component-scan base-package="com.jeecg.service" />
+	<context:component-scan base-package="com.sevenpay.member.service" />
+	<context:component-scan base-package="com.sevenpay.account.service" />
+	<context:component-scan base-package="com.sevenpay.txn.service" />
+	<context:component-scan base-package="scott.service.*" />
+
+	<!-- 扫描DAO -->
+	<!-- <context:component-scan base-package="com.sevenpay.member.dao.*" /> -->
+
+	<!-- ***************配置数据源************** -->
+	<!-- <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource"> 
+		<property name="driverClassName"> <value>oracle.jdbc.driver.OracleDriver</value> 
+		</property> <property name="url"> <value>jdbc:oracle:thin:@10.0.0.3:1521:STCSDEV</value> 
+		</property> <property name="username"> <value>bcesdata</value> </property> 
+		<property name="password"> <value>abcd1234</value> </property> </bean> -->
+
+	<!-- ***************事务配置************** -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource_alibaba" />
+	</bean>
+
+	<tx:annotation-driven transaction-manager="transactionManager" />
+
+	<aop:config>
+		<aop:advisor pointcut="execution(* com.jeecg.service.*.*(..))"
+			advice-ref="txAdvice" />
+		<aop:advisor pointcut="execution(* scott.service.*.*(..))"
+			advice-ref="txAdvice" />
+	</aop:config>
+
+	<tx:advice id="txAdvice" transaction-manager="transactionManager">
+		<tx:attributes>
+			<tx:method name="get*" read-only="true" />
+			<tx:method name="query*" read-only="true" />
+			<tx:method name="find*" read-only="true" />
+			<tx:method name="load*" read-only="true" />
+			<tx:method name="select*" read-only="true" />
+			<tx:method name="*" propagation="REQUIRED" rollback-for="Exception" />
+		</tx:attributes>
+	</tx:advice>
+
+	<!-- 扫描 MyBatis Sql -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource_alibaba" />
+		<property name="configLocation" value="classpath:SqlMapConfig.xml" />
+		<property name="mapperLocations">
+			<list>
+				<value>classpath:com/jeecg/mapper/*Mapper.xml</value>
+				<value>classpath:scott/mapper/*/*Mapper.xml</value>
+				<value>classpath:com/sevenpay/*/*/*Mapper.xml</value>
+			</list>
+		</property>
+	</bean>
+
+	<!-- 扫描mapper.java -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="com.jeecg.dao,scott.dao.*,com.sevenpay.*.dao" />
+		<property name="sqlSessionFactoryBeanName" value="sqlSessionFactory" />
+	</bean>
+
+	<!-- Spring 工具类 -->
+	<bean id="springContextUtil" class="com.base.util.SpringContextUtil" />
+
+	<!-- 拦截器 -->
+	<mvc:interceptors>
+		<mvc:interceptor>
+			<mvc:mapping path="/**" />
+			<bean class="com.sevenpay.core.interceptors.EncodingInterceptor" />
+		</mvc:interceptor>
+		<mvc:interceptor>
+			<mvc:mapping path="/**" />
+			<bean class="com.sevenpay.core.interceptors.AuthInterceptor">
+				<property name="excludeUrls">
+					<list>
+						<value>loginController.do?goPwdInit</value>
+						<value>loginController.do?pwdInit</value>
+						<value>loginController.do?login</value>
+						<value>loginController.do?checkuser</value>
+						<value>repairController.do?repair</value>
+						<value>repairController.do?deleteAndRepair</value>
+						<value>account/reg/index.do</value>
+						<value>account/reg/completeReg.do</value>
+						<value>account/reg/completeRegForm.do</value>
+						<value>account/reg/completeRegForm.do</value>
+						<value>enrchantRegister.do?firstStep</value>
+						<value>enrchantRegister.do?waitForDetail</value>
+						<value>enrchantRegister.do?fillDetail</value>
+						<value>enrchantRegister.do?fillLegal</value>
+						<value>enrchantRegister.do?fillAccount</value>
+						<value>enrchantRegister.do?finishRegister</value>
+						<value>enrchantRegister.do?overRegisterDone</value>
+						<value>gateWay.do?body=testFortest</value>
+						<value>indexUI.do?io</value>
+						<value>indexUI.do?login</value>
+						<value>ulogin.do?land</value>
+						<value>userRegister</value>
+					</list>
+				</property>
+			</bean>
+		</mvc:interceptor>
+	</mvc:interceptors>
+
+</beans>
+
